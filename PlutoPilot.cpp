@@ -17,7 +17,7 @@
 #define ABS(x) ((x) > 0 ? (x) : -(x))
 
 bool isAutoStablised=false;
-bool isArmed=false;
+bool isarmed=false;
 int16_t setHeading=0;
 int16_t heading_error=0;
 int16_t k=10;
@@ -171,12 +171,12 @@ void plutoPilot()
 		Motor.set(M2, 1000);
 		Motor.set(M3, 1000);
 
-        if(!isArmed)
+        if(!isarmed)
         {
 
-        	isArmed=Control.arm();
+        	isarmed=Control.arm();
 
-           if(isArmed)
+           if(isarmed)
            {
         	   Flight.setRelativeAltholdHeight(200);
         	   Servo.set(S1, 600);
@@ -201,7 +201,7 @@ void plutoPilot()
 //The function is called once after plutoPilot when you deactivate UserCode
 void onPilotFinish()
 {
-	   isArmed=false;
+	   isarmed=false;
 	   Control.disableFlightStatus(false);
 	   Servo.set(S1, 1900);
 	   Motor.set(M2, 1000);
