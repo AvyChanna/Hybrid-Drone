@@ -32,7 +32,7 @@ void plutoInit()
 {
 
 // Add your hardware initialization code here
-	Servo.set(S1, 1900);  
+	Servo.set(S1, 1900);
 }
 
 
@@ -45,6 +45,8 @@ void onPilotStart()
 
 	Roll_value=0;
 	Throttle_value=0;
+    setHeading=Flight.getAngle(AG_YAW);
+
 
   // do your one time stuffs here
 
@@ -56,109 +58,100 @@ void onPilotStart()
 void plutoPilot()
 {
 	if(!App.isArmSwitchOn())
+	{
+        if(abs(Control.getRcData(RC_PITCH)-1500)<100)
+        {
+            isAutoStablised=false;    
+        }
+		else
+        {
+            if(!isAutoStabilized)
+                setHeading=Flight.getAngle(AG_YAW);
 
+            if(abs(Control.getRcData(RC_ROLL)-1500)>100){
+                setHeading=Flight.getAngle(AG_YAW);
+            }    
+            isAutoStablised=true;
+        }
+
+
+
+		if(isAutoStablised)
 		{
-		if(Control.getRcData(RC_PITCH)>=1930)
-				{
-					isAutoStablised=true;
-					setHeading=Flight.getAngle(AG_YAW);
-					ledOp(L_LEFT, ON);
-					ledOp(L_RIGHT, OFF);
-
-
-				}
-
-			else if(Control.getRcData(RC_PITCH)<1070)
-				{
-					isAutoStablised=false;
-					ledOp(L_LEFT, OFF);
-					ledOp(L_RIGHT, ON);
-
-				}
-
-
-
-			if(isAutoStablised)
+			if(ABS(Control.getRcData(RC_ROLL)-1500)<30)
 			{
+				heading_error=setHeading-Flight.getAngle(AG_YAW);
 
 
-				if(ABS(Control.getRcData(RC_ROLL)-1500)<30)
-				{
-					heading_error=setHeading-Flight.getAngle(AG_YAW);
+				if(heading_error>180)
+					heading_error=heading_error-360;
 
+				else if(heading_error<-180)
+					heading_error=heading_error+360;
 
-					if(heading_error>180)
-						heading_error=heading_error-360;
-
-					else if(heading_error<-180)
-						heading_error=heading_error+360;
-
-					Roll_value=1500 +k*heading_error;
-				}
-				else
-				{
-					Roll_value=Control.getRcData(RC_ROLL);
-					setHeading=Flight.getAngle(AG_YAW);
-				}
-
-			}
-			else
+				Roll_value=1500 +k*heading_error;
+			}else
 			{
-
-				 Roll_value=Control.getRcData(RC_ROLL);
+				Roll_value=Control.getRcData(RC_ROLL);
+				setHeading=Flight.getAngle(AG_YAW);
 			}
 
+		}else
+		{
 
-			Throttle_value = Control.getRcData(RC_THROTTLE);
-
-
-			M3_Value =  (Throttle_value-1500)*2-(Roll_value-1500)/2;
-			M3_Value =  constrain(M3_Value, -500, 500);
-			M2_Value =  (Throttle_value-1500)*2+(Roll_value-1500)/2;
-			M2_Value =  constrain(M2_Value, -500, 500);
-
-			if(M2_Value<0)
-			{
+			 Roll_value=Control.getRcData(RC_ROLL);
+		}
 
 
-				Motor.setDirection(M2, FORWARD);
+		Throttle_value = Control.getRcData(RC_PITCH);
+
+		M3_Value =  (Throttle_value-1500)*2-(Roll_value-1500)/2;
+		M3_Value =  constrain(M3_Value, -500, 500);
+		M2_Value =  (Throttle_value-1500)*2+(Roll_value-1500)/2;
+		M2_Value =  constrain(M2_Value, -500, 500);
+
+		if(M2_Value<0)
+		{
 
 
-			}
-			else
-			{
-
-				Motor.setDirection(M2, BACKWARD);
-
-			}
-			if(M3_Value<0)
-			{
-
-
-				 Motor.setDirection(M3, BACKWARD);
-
-
-
-			}
-			else
-			{
-
-				 Motor.setDirection(M3, FORWARD);
-
-
-
-			}
-
-			M2_Valuef =generatePWM(M2_Value);
-			M3_Valuef =generatePWM(M3_Value);
-
-			Motor.set(M3,M3_Valuef);
-			Motor.set(M2,M2_Valuef);
-			Print.monitor("M2:", M2_Valuef);
-			Print.monitor("M3:",M3_Valuef );
+			Motor.setDirection(M2, FORWARD);
 
 
 		}
+		else
+		{
+
+			Motor.setDirection(M2, BACKWARD);
+
+		}
+
+		if(M3_Value<0)
+		{
+
+
+			 Motor.setDirection(M3, BACKWARD);
+
+
+
+		}
+		else
+		{
+
+			 Motor.setDirection(M3, FORWARD);
+
+
+
+		}
+
+		M2_Valuef =generatePWM(M2_Value);
+		M3_Valuef =generatePWM(M3_Value);
+
+		Motor.set(M3,M3_Valuef);
+		Motor.set(M2,M2_Valuef);
+		Print.monitor("M2:", M2_Valuef);
+		Print.monitor("M3:",M3_Valuef );
+
+	}
 	else
 	{
 		Motor.set(M2, 1000);
@@ -179,19 +172,11 @@ void plutoPilot()
 
         }
 
-
 	}
-
-
-//Add your repeated code here
-
-
 
 }
 
 
-
-//The function is called once after plutoPilot when you deactivate UserCode
 void onPilotFinish()
 {
 	   isarmed=false;
@@ -226,4 +211,9 @@ int generatePWM(int amt)
 
 
 
+}
+
+void takeoff(){
+
+	return;
 }
