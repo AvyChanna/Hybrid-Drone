@@ -45,6 +45,8 @@ void onPilotStart()
 
 	Roll_value=0;
 	Throttle_value=0;
+    setHeading=Flight.getAngle(AG_YAW);
+
 
   // do your one time stuffs here
 
@@ -57,17 +59,21 @@ void plutoPilot()
 {
 	if(!App.isArmSwitchOn())
 	{
-		if(Control.getRcData(RC_PITCH)>=1930)
-		{
-				isAutoStablised=true;
-				setHeading=Flight.getAngle(AG_YAW);
+        if(abs(Control.getRcData(RC_PITCH)-1500)<100)
+        {
+            isAutoStablised=false;    
+        }
+		else
+        {
+            if(!isAutoStabilized)
+                setHeading=Flight.getAngle(AG_YAW);
 
+            if(abs(Control.getRcData(RC_ROLL)-1500)>100){
+                setHeading=Flight.getAngle(AG_YAW);
+            }    
+            isAutoStablised=true;
+        }
 
-		}else if(Control.getRcData(RC_PITCH)<1070)
-		{
-				isAutoStablised=false;
-
-		}
 
 
 		if(isAutoStablised)
@@ -97,7 +103,7 @@ void plutoPilot()
 		}
 
 
-		Throttle_value = Control.getRcData(RC_THROTTLE);
+		Throttle_value = Control.getRcData(RC_PITCH);
 
 		M3_Value =  (Throttle_value-1500)*2-(Roll_value-1500)/2;
 		M3_Value =  constrain(M3_Value, -500, 500);
