@@ -10,9 +10,7 @@
 #include "Control.h"
 #include "Motor.h"
 #include "Print.h"
-#include "Angle.h"
 #include "Led.h"
-#include "Althold.h"
 #include "App.h"
 #include "Servo.h"
 
@@ -70,7 +68,7 @@ void plutoPilot()
 		if(Control.getRC(RC_PITCH)>=1930)
 				{
 					isAutoStablised=true;
-					setHeading=Angle.get(AG_YAW);
+					setHeading=Flight.getAngle(AG_YAW);
 					ledOp(L_LEFT, ON);
 					ledOp(L_RIGHT, OFF);
 
@@ -93,7 +91,7 @@ void plutoPilot()
 
 				if(ABS(Control.getRC(RC_ROLL)-1500)<30)
 				{
-					heading_error=setHeading-Angle.get(AG_YAW);
+					heading_error=setHeading-Flight.getAngle(AG_YAW);
 
 
 					if(heading_error>180)
@@ -107,7 +105,7 @@ void plutoPilot()
 				else
 				{
 					Roll_value=Control.getRC(RC_ROLL);
-					setHeading=Angle.get(AG_YAW);
+					setHeading=Flight.getAngle(AG_YAW);
 				}
 
 			}
@@ -180,7 +178,7 @@ void plutoPilot()
 
            if(isArmed)
            {
-        	   Althold.setRelativeAltholdHeight(200);
+        	   Flight.setRelativeAltholdHeight(200);
         	   Servo.set(S1, 600);
 
 
