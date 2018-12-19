@@ -1,11 +1,3 @@
-/* Name: PlutoX Hybrid
-
- Author: DronaAviation */
-
-
-
-
-// Do not remove the include below
 #include "PlutoPilot.h"
 #include "Control.h"
 #include "Flight.h"
