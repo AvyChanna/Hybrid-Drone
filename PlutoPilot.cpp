@@ -8,6 +8,7 @@
 // Do not remove the include below
 #include "PlutoPilot.h"
 #include "Control.h"
+#include "Flight.h"
 #include "Motor.h"
 #include "Print.h"
 #include "Led.h"
@@ -65,7 +66,7 @@ void plutoPilot()
 	if(!App.isArmSwitchOn())
 
 		{
-		if(Control.getRC(RC_PITCH)>=1930)
+		if(Control.getRcData(RC_PITCH)>=1930)
 				{
 					isAutoStablised=true;
 					setHeading=Flight.getAngle(AG_YAW);
@@ -75,7 +76,7 @@ void plutoPilot()
 
 				}
 
-			else if(Control.getRC(RC_PITCH)<1070)
+			else if(Control.getRcData(RC_PITCH)<1070)
 				{
 					isAutoStablised=false;
 					ledOp(L_LEFT, OFF);
@@ -89,7 +90,7 @@ void plutoPilot()
 			{
 
 
-				if(ABS(Control.getRC(RC_ROLL)-1500)<30)
+				if(ABS(Control.getRcData(RC_ROLL)-1500)<30)
 				{
 					heading_error=setHeading-Flight.getAngle(AG_YAW);
 
@@ -104,7 +105,7 @@ void plutoPilot()
 				}
 				else
 				{
-					Roll_value=Control.getRC(RC_ROLL);
+					Roll_value=Control.getRcData(RC_ROLL);
 					setHeading=Flight.getAngle(AG_YAW);
 				}
 
@@ -112,11 +113,11 @@ void plutoPilot()
 			else
 			{
 
-				 Roll_value=Control.getRC(RC_ROLL);
+				 Roll_value=Control.getRcData(RC_ROLL);
 			}
 
 
-			Throttle_value = Control.getRC(RC_THROTTLE);
+			Throttle_value = Control.getRcData(RC_THROTTLE);
 
 
 			M3_Value =  (Throttle_value-1500)*2-(Roll_value-1500)/2;
