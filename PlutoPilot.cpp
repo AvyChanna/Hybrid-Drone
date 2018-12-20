@@ -3,217 +3,121 @@
 #include "Flight.h"
 #include "Motor.h"
 #include "Print.h"
-#include "Led.h"
 #include "App.h"
-#include "Servo.h"
+#include "Sensor.h"
 
-#define ABS(x) ((x) > 0 ? (x) : -(x))
+int abs(int x) {return (x>0)?x:-(x);}
 
-bool isAutoStablised=false;
-bool isarmed=false;
-int16_t setHeading=0;
-int16_t heading_error=0;
-int16_t k=10;
+int current_heading;
+int current_roll;
+int current_pitch;
+int set_heading;
+bool is_armed;
+int heading_error;
 
-int16_t M3_Value;
-int16_t M2_Value;
+int m3,m2;
+int m3_pwm,m2_pwm;
 
-int16_t M2_Valuef;
-int16_t M3_Valuef;
-
-int16_t Roll_value;
-int16_t Throttle_value;
-
-int constrain(int amt, int low, int high);
-int generatePWM(int amt);
-
-//The setup function is called once at Pluto's hardware startup
 void plutoInit()
 {
-
-// Add your hardware initialization code here
-	Servo.set(S1, 1900);
+    current_roll = 0;
+    current_heading = 0;
+    heading_error = 0;
+    current_pitch = 0;
+    set_heading = 0;
+    is_armed = false;
 }
 
 
-
-//The function is called once before plutoPilot when you activate UserCode
 void onPilotStart()
 {
-
-	Control.disableFlightStatus(true);
-
-	Roll_value=0;
-	Throttle_value=0;
-    setHeading=Flight.getAngle(AG_YAW);
-
-
-  // do your one time stuffs here
-
+    set_heading = Flight.getAngle(AG_YAW);
+    current_roll = 0;
+    current_heading = 0;
+    heading_error = 0;
+    current_pitch = 0;
+    set_heading = 0;
+    is_armed = false;
+    Motor.set(M2, 1000);
+	Motor.set(M3, 1000);
 }
 
-
-
-// The loop function is called in an endless loop
 void plutoPilot()
 {
-	if(!App.isArmSwitchOn())
-	{
-        if(abs(Control.getRcData(RC_PITCH)-1500)<100)
+    if(App.isArmSwitchOn())
+    {
+        Motor.set(M2, 1000);
+	    Motor.set(M3, 1000);
+        if(!is_armed)
         {
-            isAutoStablised=false;    
-        }
-		else
-        {
-            if(!isAutoStabilized)
-                setHeading=Flight.getAngle(AG_YAW);
-
-            if(abs(Control.getRcData(RC_ROLL)-1500)>100){
-                setHeading=Flight.getAngle(AG_YAW);
-            }    
-            isAutoStablised=true;
-        }
-
-
-
-		if(isAutoStablised)
-		{
-			if(ABS(Control.getRcData(RC_ROLL)-1500)<30)
-			{
-				heading_error=setHeading-Flight.getAngle(AG_YAW);
-
-
-				if(heading_error>180)
-					heading_error=heading_error-360;
-
-				else if(heading_error<-180)
-					heading_error=heading_error+360;
-
-				Roll_value=1500 +k*heading_error;
-			}else
-			{
-				Roll_value=Control.getRcData(RC_ROLL);
-				setHeading=Flight.getAngle(AG_YAW);
+            is_armed = Control.arm();
+            if (is_armed) {
+				Flight.setRelativeAltholdHeight(200);
 			}
-
-		}else
-		{
-
-			 Roll_value=Control.getRcData(RC_ROLL);
-		}
-
-
-		Throttle_value = Control.getRcData(RC_PITCH);
-
-		M3_Value =  (Throttle_value-1500)*2-(Roll_value-1500)/2;
-		M3_Value =  constrain(M3_Value, -500, 500);
-		M2_Value =  (Throttle_value-1500)*2+(Roll_value-1500)/2;
-		M2_Value =  constrain(M2_Value, -500, 500);
-
-		if(M2_Value<0)
-		{
-
-
-			Motor.setDirection(M2, FORWARD);
-
-
-		}
-		else
-		{
-
-			Motor.setDirection(M2, BACKWARD);
-
-		}
-
-		if(M3_Value<0)
-		{
-
-
-			 Motor.setDirection(M3, BACKWARD);
-
-
-
-		}
-		else
-		{
-
-			 Motor.setDirection(M3, FORWARD);
-
-
-
-		}
-
-		M2_Valuef =generatePWM(M2_Value);
-		M3_Valuef =generatePWM(M3_Value);
-
-		Motor.set(M3,M3_Valuef);
-		Motor.set(M2,M2_Valuef);
-		Print.monitor("M2:", M2_Valuef);
-		Print.monitor("M3:",M3_Valuef );
-
-	}
-	else
-	{
-		Motor.set(M2, 1000);
-		Motor.set(M3, 1000);
-
-        if(!isarmed)
-        {
-
-        	isarmed=Control.arm();
-
-           if(isarmed)
-           {
-        	   Flight.setRelativeAltholdHeight(200);
-        	   Servo.set(S1, 600);
-
-
-           }
-
         }
+    }
+    else
+    {
+        current_roll = Control.getRcData(RC_ROLL);
+        current_pitch = Control.getRcData(RC_PITCH);
+        if( abs(current_roll - 1500) < 100 )
+        {
+            current_roll = 1500;
+            heading_error = set_heading - Flight.getAngle(AG_YAW);
+        }
+        else
+        {
+            heading_error = 0;
+            set_heading = Flight.getAngle(AG_YAW);
+        }
+        if( abs(current_pitch - 1500) < 100)
+            current_pitch = 1500;
 
-	}
+        if(heading_error > 180)
+            heading_error -= 360;
+        if(heading_error < -180)
+            heading_error += 360;
 
+        current_roll -= 10*heading_error;
+        m2 = 4*current_pitch + current_roll - 4500;
+        m3 = 4*current_pitch - current_roll - 7500;
+        m2 = (int)((float)m2*10.0/43.0); //  -4300, 4300, -1000, 1000
+        m3 = (int)((float)m2*10.0/43.0);
+
+        if (m2 < 0)
+            Motor.setDirection(M3, BACKWARD);
+        else
+            Motor.setDirection(M3, FORWARD);
+
+        if (m3 < 0)
+            Motor.setDirection(M2, FORWARD);
+        else
+            Motor.setDirection(M2, BACKWARD);
+
+        m2_pwm = 1000 + abs(m2);
+        m3_pwm = 1000 + abs(m3);
+
+//        Print.monitor("\nheading_error=0");
+        Print.monitor("\ncurrent_heading=",Flight.getAngle(AG_YAW));
+//        Print.monitor("\nX=",Magnetometer.getX());
+//        Print.monitor("\nY=",Magnetometer.getY());
+//        Print.monitor("\nZ=",Magnetometer.getZ());
+
+
+        Motor.set(M2, m2_pwm);
+        Motor.set(M3, m3_pwm);
+    }
 }
-
 
 void onPilotFinish()
 {
-	   isarmed=false;
-	   Control.disableFlightStatus(false);
-	   Servo.set(S1, 1900);
-	   Motor.set(M2, 1000);
-	   Motor.set(M3, 1000);
+    current_roll = 0;
+    current_heading = 0;
+    heading_error = 0;
+    current_pitch = 0;
+    set_heading = 0;
+    is_armed = false;
 
-// do your cleanup stuffs here
-
-}
-
-int constrain(int amt, int low, int high)
-{
-    if (amt < low)
-        return low;
-    else if (amt > high)
-        return high;
-    else
-        return amt;
-}
-
-int generatePWM(int amt)
-{
-
-	amt= ABS(amt);
-
-	amt=1000+(amt*2);
-
-	return amt;
-
-
-
-
-}
-
-void takeoff(){
-
-	return;
+    Motor.set(M2, 1000);
+	Motor.set(M3, 1000);
 }
